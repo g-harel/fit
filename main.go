@@ -1,17 +1,15 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
-	"github.com/g-harel/fit/internal/sources"
-	"github.com/g-harel/fit/internal/sources/takeout"
+	"github.com/g-harel/fit/internal/input/takeout"
+	"github.com/g-harel/fit/internal/output/json"
 )
 
 func main() {
 	println(os.Args[1])
-
-	takeout.ReadArchive(os.Args[1], func(record *sources.Record) {
-		fmt.Println(record)
-	})
+	jsonOutput := json.Handler{}
+	takeout.ReadArchive(os.Args[1], jsonOutput.Handle)
+	println(jsonOutput.String())
 }

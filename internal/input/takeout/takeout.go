@@ -8,12 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/g-harel/fit/internal/sources"
+	"github.com/g-harel/fit/internal"
 )
 
 const (
 	colStartTime     = 0
-	colEndTime       = 1
 	colAverageWeight = 12
 )
 
@@ -24,7 +23,7 @@ const (
 	aggregationsTimeFormat = "15:04:05.999-07:00"
 )
 
-func ReadArchive(archivePath string, handler sources.RecordHandler) {
+func ReadArchive(archivePath string, handler internal.RecordHandler) {
 	archiveReader, err := zip.OpenReader(archivePath)
 	if err != nil {
 		panic(err)
@@ -39,7 +38,7 @@ func ReadArchive(archivePath string, handler sources.RecordHandler) {
 	}
 }
 
-func handleDailyAggregation(zipFile *zip.File, handler sources.RecordHandler) {
+func handleDailyAggregation(zipFile *zip.File, handler internal.RecordHandler) {
 	dateString := strings.TrimSuffix(zipFile.FileInfo().Name(), aggregationsFileSuffix)
 	date, err := time.Parse(aggregationsDateFormat, dateString)
 	if err != nil {
@@ -65,27 +64,20 @@ func handleDailyAggregation(zipFile *zip.File, handler sources.RecordHandler) {
 	}
 }
 
-func handleRecordLine(record []string, date time.Time, handler sources.RecordHandler) {
-	startTime, err := time.Parse(aggregationsTimeFormat, record[colStartTime])
+func handleRecordLine(record []string, date time.Time, handler internal.RecordHandler) {
+	timestamp, err := time.Parse(aggregationsTimeFormat, record[colStartTime])
 	if err != nil {
 		return
 	}
-	startTime = startTime.AddDate(date.Year(), int(date.Month())-1, date.Day()-1)
-
-	endTime, err := time.Parse(aggregationsTimeFormat, record[colEndTime])
-	if err != nil {
-		return
-	}
-	endTime = endTime.AddDate(date.Year(), int(date.Month())-1, date.Day()-1)
+	timestamp = timestamp.AddDate(date.Year(), int(date.Month())-1, date.Day()-1)
 
 	weight, err := strconv.ParseFloat(record[colAverageWeight], 32)
 	if err != nil {
 		return
 	}
 
-	handler(&sources.Record{
-		Start:    startTime,
-		End:      endTime,
-		WeightKG: float32(weight),
+	handler(&internal.Record{
+		Timestamp: timestamp,
+		WeightKG:  float32(weight),
 	})
 }
