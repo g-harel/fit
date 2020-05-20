@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
@@ -9,20 +10,23 @@ import (
 	"github.com/g-harel/fit/internal/output/json"
 )
 
+var takeoutArchivePath = flag.String("takeout", "", "takeout archive filename")
+var credentialsPath = flag.String("credentials", "", "credentials json filename")
+
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("Usage: fit <takeout zip file> <auth code>")
+	flag.Parse()
+
+	if *takeoutArchivePath == "" || *credentialsPath == "" {
+		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+		flag.PrintDefaults()
 		os.Exit(1)
 	}
 
-	takeoutZipFile := os.Args[1]
-	authCode := os.Args[2]
-
 	jsonOutput := json.Handler{}
-	takeout.ReadArchive(takeoutZipFile, jsonOutput.Handle)
+	takeout.ReadArchive(*takeoutArchivePath, jsonOutput.Handle)
 	println(jsonOutput.String())
 
 	apiOutput := api.Handler{}
-	takeout.ReadArchive(takeoutZipFile, apiOutput.Handle)
-	apiOutput.Write(authCode)
+	takeout.ReadArchive(*takeoutArchivePath, apiOutput.Handle)
+	apiOutput.Write(*credentialsPath)
 }

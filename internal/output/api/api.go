@@ -4,9 +4,12 @@ package api
 
 import (
 	"context"
+	"fmt"
+	"io/ioutil"
 
 	"github.com/g-harel/fit/internal"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	"google.golang.org/api/fitness/v1"
 	"google.golang.org/api/option"
 )
@@ -19,10 +22,11 @@ func (h *Handler) Handle(record *internal.Record) {
 	h.records = append(h.records, record)
 }
 
-func (h *Handler) Write(code string) {
+func (h *Handler) Write(credentialsPath string) error {
 	ctx := context.Background()
-	config := &oauth2.Config{
-		// TODO
+	config, err := loadConfigFromFile(credentialsPath, fitness.FitnessBodyWriteScope)
+	if err != nil {
+		return fmt.Errorf("load credentials: %v", err)
 	}
 
 	token, err := config.Exchange(ctx, code)
@@ -36,6 +40,23 @@ func (h *Handler) Write(code string) {
 	// createDataSource(token)
 	// for {addRecordToDataset(token, ..., record)}
 	println(fitnessService)
+
+	return nil
+}
+
+func loadConfigFromFile(filename string, scopes ...string) (*oauth2.Config, error) {
+	json, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("read secret file: %v", err)
+	}
+
+	conf, err := google.ConfigFromJSON(json)
+	if err != nil {
+		return nil, fmt.Errorf("config from json: %v", err)
+	}
+
+	conf.Scopes = append(conf.Scopes, scopes...)
+	return conf, nil
 }
 
 func createDataSource(auth string) string {
