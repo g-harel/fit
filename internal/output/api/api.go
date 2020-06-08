@@ -1,4 +1,6 @@
 // https://godoc.org/google.golang.org/api/fitness/v1
+// https://github.com/a-h/gofit/
+// https://github.com/1self/google-fit-integration/blob/master/src/main.go
 
 package api
 
@@ -23,25 +25,37 @@ func (h *Handler) Handle(record *internal.Record) {
 }
 
 func (h *Handler) Write(credentialsPath string) error {
+
+	//TODO
+	// createFitnessService(credentialsPath)
+	// createDataSource(token)
+	// for {addRecordToDataset(token, ..., record)}
+
+	return nil
+}
+
+func createFitnessService(credentialsPath string) (*fitness.Service, error) {
 	ctx := context.Background()
+
 	config, err := loadConfigFromFile(credentialsPath, fitness.FitnessBodyWriteScope)
 	if err != nil {
-		return fmt.Errorf("load credentials: %v", err)
+		return nil, fmt.Errorf("load credentials: %v", err)
 	}
+
+	// TODO
+	code := "code"
 
 	token, err := config.Exchange(ctx, code)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("convert auth to token: %v", err)
 	}
 
 	fitnessService, err := fitness.NewService(ctx, option.WithTokenSource(config.TokenSource(ctx, token)))
+	if err != nil {
+		return nil, fmt.Errorf("create service: %v", err)
+	}
 
-	//TODO
-	// createDataSource(token)
-	// for {addRecordToDataset(token, ..., record)}
-	println(fitnessService)
-
-	return nil
+	return fitnessService, nil
 }
 
 func loadConfigFromFile(filename string, scopes ...string) (*oauth2.Config, error) {
